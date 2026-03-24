@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartHealth Advisor</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+/* Navbar logo */
+/* Auto suggestion dropdown */
+.list-group {
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.form-group {
+    position: relative;
+}
+.list-group-item {
+    background-color: #2b2b2b;
+    color: white;
+    border: 1px solid #444;
+}
+
+.list-group-item:hover {
+    background-color: #00ff7f;
+    color: black;
+    cursor: pointer;
+}
+
+.logo { width: 50px; height: 50px; margin-left: 2px; }
+.myimg { width: 50px; height: 50px; border: 2px solid black; border-radius: 25px; }
+
+/* Headings */
+h1.text-green, h3.text-green { color: #00ff7f; text-shadow:1px1px2px #000; }
+
+/* Form container */
+.container.my-4 { background: #1a1a1a; color: #e0e0e0; border-radius: 15px; padding: 40px; box-shadow:0 4px 20px rgba(0,0,0,0.6); transition: transform 0.2s; }
+.container.my-4:hover { transform: scale(1.02); }
+
+/* Inputs */
+.form-control { background:#2b2b2b; color:#fff; border:1px solid #555; border-radius:10px; padding:12px; transition:border-color 0.3s, box-shadow 0.3s; }
+.form-control:focus { border-color:#1ae77d; box-shadow:0 0 8px #00ff7f33; color:#fff; background:#2b2b2b; }
+
+/* Buttons */
+#startSpeechRecognition { background:#007bff; border:1px solid #00ff7f; color:#fff; padding:10px 20px; border-radius:20px; transition:all 0.3s; }
+#startSpeechRecognition:hover { background:#00aaff; cursor:pointer; }
+
+.btn-danger { background:#ff4c4c; border-color:#ff4c4c; font-weight:bold; transition:all 0.3s; }
+.btn-danger:hover { background:#ff6666; cursor:pointer; }
+
+.toggle-button { padding:6px; font-size:18px; font-weight:bold; width:150px; border-radius:5px; transition:all 0.3s; border:none; margin-bottom:10px; }
+.toggle-button:hover { opacity:0.85; transform:translateY(-2px); cursor:pointer; }
+
+/* Info boxes */
+.info-box { background:#1c1c1c; border-radius:10px; padding:15px 20px; margin-bottom:15px; box-shadow:0 4px 10px rgba(0,0,0,0.5); transition: transform 0.2s; }
+.info-box:hover { transform: scale(1.02); }
+.info-box h4 { margin-bottom:10px; font-weight:bold; }
+.info-box p, .info-box ul { color:#f1f1f1; font-size:16px; line-height:1.5; }
+
+/* Transcription display */
+#transcription { margin-top:10px; padding:10px; border-radius:10px; background:#2b2b2b; color:#00ff7f; font-weight:bold; min-height:30px; }
+
+/* Read more toggle */
+.read-more { color: #00ff7f; cursor:pointer; font-weight:bold; margin-left:5px; }
+
+#diseaseChart{
+    max-height:350px;
+    }
+
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+<div class="container-fluid">
+<div class="logo"><img class="myimg" src="{{ url_for('static', filename='img.png') }}" alt=""></div>
+<a class="navbar-brand" href="#">SmartHealth Advisor</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+<span class="navbar-toggler-icon"></span></button>
+<div class="collapse navbar-collapse" id="navbarContent">
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+<li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="/chatbot">AI Chatbot</a></li>
+<li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+<li class="nav-item"><a class="nav-link" href="/about">About</a></li>
+<li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
+<li class="nav-item"><a class="nav-link" href="/developer">Developer</a></li>
+<li class="nav-item"><a class="nav-link" href="/blog">Blog</a></li>
+</ul>
+<form class="d-flex" role="search">
+<input class="form-control me-2" type="search" placeholder="Search">
+<button class="btn btn-outline-success" type="submit">Search</button>
+</form>
+</div>
+</div>
+</nav>
+
+<!-- Main Form -->
+<h1 class="mt-4 my-4 text-center text-blue">SmartHealth Advisor</h1>
+<h3 class="text-center text-blue mb-4">Understanding your health is as easy as asking a question.</h3>
+
+<div class="container my-4">
+<form action="/predict" method="post">
+<div class="form-group">
+<label>Enter up to 4 Symptoms:</label>
+<input type="text" class="form-control" id="symptom1" name="symptom1" placeholder="Symptom 1 (e.g., itching)" required>
+<div id="suggestions1" class="list-group"></div>
+<br>
+
+<input type="text" class="form-control" id="symptom2" name="symptom2" placeholder="Symptom 2 (optional)">
+<div id="suggestions2" class="list-group"></div>
+<br>
+
+<input type="text" class="form-control" id="symptom3" name="symptom3" placeholder="Symptom 3 (optional)">
+<div id="suggestions3" class="list-group"></div>
+<br>
+
+<input type="text" class="form-control" id="symptom4" name="symptom4" placeholder="Symptom 4 (optional)">
+<div id="suggestions4" class="list-group"></div>
+<button type="button" id="startSpeechRecognition" class="btn btn-primary">Start Speech Recognition</button><br>
+<div id="transcription"></div><br>
+<button type="submit" class="btn btn-danger btn-lg w-100">Predict</button>
+</form>
+</div>
+
+{% if predicted_disease %}
+
+<div class="container text-center my-4">
+
+<h4>Health Risk Assessment</h4>
+
+<div class="alert 
+{% if risk_level == 'HIGH' %}
+alert-danger
+{% elif risk_level == 'MEDIUM' %}
+alert-warning
+{% else %}
+alert-success
+{% endif %}
+">
+
+<strong>Disease:</strong> {{ predicted_disease }} <br>
+
+<strong>Probability:</strong> {{ probability }}% <br>
+
+<strong>Risk Level:</strong> {{ risk_level }}
+
+{% if risk_level == 'HIGH' %}
+<br>⚠️ Consult a doctor immediately.
+{% elif risk_level == 'MEDIUM' %}
+<br>Monitor symptoms and take precautions.
+{% else %}
+<br>Low risk but maintain healthy lifestyle.
+{% endif %}
+
+</div>
+
+</div>
+
+{% endif %}
+
+{% if top_predictions %}
+
+<div class="container my-4">
+
+<h4 class="text-center text-light mb-3">Disease Prediction Probability</h4>
+
+<canvas id="diseaseChart"></canvas>
+
+</div>
+
+{% endif %}
+
+
+{% if show_hospitals %}
+
+<div class="container text-center my-4">
+
+<h4 class="text-warning">⚠ Nearby Hospitals Recommended</h4>
+
+<p>Based on your health risk, we recommend visiting a nearby hospital.</p>
+
+<button onclick="findHospitals()" class="btn btn-danger btn-lg">
+🏥 Find Nearby Hospitals
+</button>
+
+</div>
+
+<script>
+    function findHospitals(){
+
+        let url = "https://www.google.com/maps/search/best+hospitals+near+me+rating+4";
+        window.open(url,"_blank");
+        
+        }
+</script>
+
+{% endif %}
+
+
+{% if top_predictions %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const diseases = [
+{% for d,p in top_predictions %}
+"{{d}}",
+{% endfor %}
+]
+
+const probs = [
+{% for d,p in top_predictions %}
+{{p}},
+{% endfor %}
+]
+
+const ctx = document.getElementById("diseaseChart");
+
+new Chart(ctx,{
+type:"bar",
+data:{
+labels:diseases,
+datasets:[{
+label:"Prediction Probability %",
+data:probs,
+backgroundColor:[
+"#ef4444",
+"#f59e0b",
+"#22c55e"
+]
+}]
+},
+options:{
+responsive:true,
+plugins:{
+legend:{display:false}
+},
+scales:{
+y:{
+beginAtZero:true,
+max:100
+}
+}
+}
+});
+
+</script>
+
+{% endif %}
+
+{% if predicted_disease %}
+<!-- Results Accordion -->
+<div class="container my-4">
+<h1 class="text-center mb-4">ML Prediction Results</h1>
+<div class="accordion" id="resultsAccordion">
+
+<!-- Disease -->
+<div class="accordion-item info-box">
+<h2 class="accordion-header" id="headingDisease">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDisease">
+🧬 Disease
+</button></h2>
+<div id="collapseDisease" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+<div class="accordion-body">
+<p>{{ predicted_disease }} 
+<button class="btn btn-sm btn-outline-light ms-2" onclick="copyText('{{ predicted_disease }}')"><i class="bi bi-clipboard"></i> Copy</button></p>
+</div>
+</div>
+</div>
+
+<!-- Description -->
+<div class="accordion-item info-box">
+<h2 class="accordion-header" id="headingDesc">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDesc">
+📖 Description
+</button></h2>
+<div id="collapseDesc" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+<div class="accordion-body">
+<p id="descText">{{ dis_des[:300] }}{% if dis_des|length > 300 %}...<span class="read-more" onclick="toggleReadMore('descTextFull')">Read more</span>{% endif %}</p>
+<p id="descTextFull" style="display:none;">{{ dis_des }}</p>
+<button class="btn btn-sm btn-outline-light" onclick="copyText('{{ dis_des }}')"><i class="bi bi-clipboard"></i> Copy</button>
+</div>
+</div>
+</div>
+
+<!-- Precautions -->
+<div class="accordion-item info-box">
+<h2 class="accordion-header" id="headingPrecaution">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrecaution">
+⚕️ Precautions
+</button></h2>
+<div id="collapsePrecaution" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+<div class="accordion-body">
+<ul>
+{% for i in my_precautions %}
+<li>{{ i }}</li>
+{% endfor %}
+</ul>
+<button class="btn btn-sm btn-outline-light" onclick="copyText('{{ my_precautions|join(', ') }}')"><i class="bi bi-clipboard"></i> Copy</button>
+</div>
+</div>
+</div>
+
+<!-- Medicines -->
+<div class="accordion-item info-box">
+<h2 class="accordion-header" id="headingMeds">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMeds">
+💊 Medicines
+</button></h2>
+<div id="collapseMeds" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+<div class="accordion-body">
+<ul>{% for i in medications %}<li>{{ i }}</li>{% endfor %}</ul>
+<button class="btn btn-sm btn-outline-light" onclick="copyText('{{ medications|join(', ') }}')"><i class="bi bi-clipboard"></i> Copy</button>
+</div>
+</div>
+</div>
+
+<!-- Workouts -->
+<div class="accordion-item info-box">
+<h2 class="accordion-header" id="headingWorkouts">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWorkouts">
+🏋️‍♀️ Workouts
+</button></h2>
+<div id="collapseWorkouts" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+<div class="accordion-body">
+<ul>{% for i in workout %}<li>{{ i }}</li>{% endfor %}</ul>
+<button class="btn btn-sm btn-outline-light" onclick="copyText('{{ workout|join(', ') }}')"><i class="bi bi-clipboard"></i> Copy</button>
+</div>
+</div>
+</div>
+
+<!-- Diets -->
+<div class="accordion-item info-box">
+<h2 class="accordion-header" id="headingDiets">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDiets">
+🥗 Diet Recommendations
+</button></h2>
+<div id="collapseDiets" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+<div class="accordion-body">
+<ul>{% for i in my_diet %}<li>{{ i }}</li>{% endfor %}</ul>
+<button class="btn btn-sm btn-outline-light" onclick="copyText('{{ my_diet|join(', ') }}')"><i class="bi bi-clipboard"></i> Copy</button>
+</div>
+</div>
+</div>
+
+<!-- Copy All Button -->
+<div class="text-center my-3">
+<button class="btn btn-success" onclick="copyAllResults()"><i class="bi bi-clipboard-check"></i> Copy All Results</button>
+</div>
+
+</div>
+</div>
+
+{% endif %}
+
+{% if predicted_disease %}
+
+<div class="container text-center my-3">
+<button id="downloadPDF" class="btn btn-success btn-lg">
+<i class="bi bi-file-earmark-pdf"></i> Download Health Report
+</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+
+const pdfBtn = document.getElementById("downloadPDF");
+
+if(pdfBtn){
+
+pdfBtn.onclick = function(){
+
+const { jsPDF } = window.jspdf;
+
+const doc = new jsPDF();
+
+let y = 20;
+
+// Title
+doc.setFontSize(22);
+doc.text("SmartHealth Advisor Report", 20, y);
+
+y += 20;
+
+// Disease
+doc.setFontSize(16);
+doc.text("Disease:",20,y);
+
+doc.setFontSize(12);
+doc.text(`{{ predicted_disease }}`,60,y);
+
+y += 15;
+
+// Description
+doc.setFontSize(16);
+doc.text("Description:",20,y);
+
+y += 10;
+
+doc.setFontSize(12);
+const desc = doc.splitTextToSize(`{{ dis_des }}`,170);
+
+doc.text(desc,20,y);
+
+y += desc.length * 7 + 10;
+
+// Precautions
+doc.setFontSize(16);
+doc.text("Precautions:",20,y);
+
+y += 10;
+
+const precautions = "{{ my_precautions|join(', ') }}".split(",");
+
+precautions.forEach(p=>{
+doc.text("• "+p.trim(),20,y);
+y+=7;
+});
+
+y += 5;
+
+// Medicines
+doc.setFontSize(16);
+doc.text("Medicines:",20,y);
+
+y += 10;
+
+const meds = "{{ medications|join(', ') }}".split(",");
+
+meds.forEach(m=>{
+doc.text("• "+m.trim(),20,y);
+y+=7;
+});
+
+y += 5;
+
+// Diet
+doc.setFontSize(16);
+doc.text("Diet Recommendations:",20,y);
+
+y += 10;
+
+const diet = "{{ my_diet|join(', ') }}".split(",");
+
+diet.forEach(d=>{
+doc.text("• "+d.trim(),20,y);
+y+=7;
+});
+
+// Save file
+doc.save("Health_Report.pdf");
+
+}
+
+}
+
+</script>
+
+{% endif %}
+
+
+
+<!-- Social Share Buttons -->
+<div class="text-center my-3">
+    <p>Share your results:</p>
+    <!-- WhatsApp -->
+    <a href="https://api.whatsapp.com/send?text={{ predicted_disease }}%0A{{ dis_des }}%0APrecautions:%20{{ my_precautions|join(', ') }}%0AMedicines:%20{{ medications|join(', ') }}%0AWorkouts:%20{{ workout|join(', ') }}%0ADiets:%20{{ my_diet|join(', ') }}" 
+       target="_blank" class="btn btn-success me-2">
+       <i class="bi bi-whatsapp"></i> WhatsApp
+    </a>
+    <!-- Twitter -->
+    <a href="https://twitter.com/intent/tweet?text={{ predicted_disease }}%0A{{ dis_des }}%0APrecautions:%20{{ my_precautions|join(', ') }}%0AMedicines:%20{{ medications|join(', ') }}%0AWorkouts:%20{{ workout|join(', ') }}%0ADiets:%20{{ my_diet|join(', ') }}" 
+       target="_blank" class="btn btn-info me-2">
+       <i class="bi bi-twitter"></i> Twitter
+    </a>
+    <!-- Email -->
+    <a href="mailto:?subject=My Health Prediction Results&body={{ predicted_disease }}%0A{{ dis_des }}%0APrecautions:%20{{ my_precautions|join(', ') }}%0AMedicines:%20{{ medications|join(', ') }}%0AWorkouts:%20{{ workout|join(', ') }}%0ADiets:%20{{ my_diet|join(', ') }}" 
+       class="btn btn-warning text-dark">
+       <i class="bi bi-envelope"></i> Email
+    </a>
+</div>
+
+<!-- Footer -->
+<footer class="bg-dark text-light pt-5 pb-4 mt-5">
+<div class="container text-md-left">
+<div class="row">
+<div class="col-md-3"><h5 class="text-info">SmartHealth Advisor</h5><p>Empowering people with AI-powered health insights.</p></div>
+<div class="col-md-3"><h5 class="text-info">Quick Links</h5><p><a href="/" class="text-light text-decoration-none">Home</a></p></div>
+<div class="col-md-3"><h5 class="text-info">Resources</h5><p><a href="#" class="text-light">Health Tips</a></p></div>
+<div class="col-md-3"><h5 class="text-info">Contact</h5><p>Rgukt Basar, India</p><p>support@smarthealth.com</p></div>
+</div>
+<hr>
+<p class="text-center">© <span id="year"></span> SmartHealth Advisor — All Rights Reserved</p>
+</div>
+</footer>
+
+<script>
+    function enableAutoSuggest(inputId, suggestionId){
+
+        const input = document.getElementById(inputId);
+        const suggestionBox = document.getElementById(suggestionId);
+    
+        input.addEventListener("keyup", function(){
+    
+            let query = input.value;
+    
+            if(query.length < 2){
+                suggestionBox.innerHTML = "";
+                return;
+            }
+    
+            fetch(`/suggest?q=${query}`)
+            .then(response => response.json())
+            .then(data => {
+    
+                suggestionBox.innerHTML = "";
+    
+                data.suggestions.forEach(symptom => {
+    
+                    let item = document.createElement("a");
+                    item.classList.add("list-group-item","list-group-item-action");
+                    item.textContent = symptom;
+    
+                    item.onclick = function(){
+                        input.value = symptom;
+                        suggestionBox.innerHTML = "";
+                    };
+    
+                    suggestionBox.appendChild(item);
+    
+                });
+    
+            });
+    
+        });
+    }
+    
+    enableAutoSuggest("symptom1","suggestions1");
+    enableAutoSuggest("symptom2","suggestions2");
+    enableAutoSuggest("symptom3","suggestions3");
+    enableAutoSuggest("symptom4","suggestions4");
+// Dynamic footer year
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Speech recognition
+const startBtn = document.getElementById('startSpeechRecognition');
+const transcriptionDiv = document.getElementById('transcription');
+startBtn.addEventListener('click', () => {
+const recognition = new webkitSpeechRecognition();
+recognition.lang = 'en-US';
+recognition.onresult = (event) => {
+const result = event.results[0][0].transcript;
+if(transcriptionDiv.textContent.length>0){ transcriptionDiv.textContent += ", " + result; } 
+else { transcriptionDiv.textContent = result; }
+};
+recognition.start();
+});
+
+// Copy function
+function copyText(text){ navigator.clipboard.writeText(text).then(()=>alert('Copied!')); }
+
+// Copy All function
+function copyAllResults(){
+let allText = '';
+allText += 'Disease: {{ predicted_disease }}\n';
+allText += 'Description: {{ dis_des }}\n';
+allText += 'Precautions: {{ my_precautions|join(", ") }}\n';
+allText += 'Medicines: {{ medications|join(", ") }}\n';
+allText += 'Workouts: {{ workout|join(", ") }}\n';
+allText += 'Diets: {{ my_diet|join(", ") }}';
+navigator.clipboard.writeText(allText).then(()=>alert('All results copied!'));
+}
+
+// Read more toggle
+function toggleReadMore(id){
+const full = document.getElementById(id);
+full.style.display = full.style.display==='none'?'block':'none';
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

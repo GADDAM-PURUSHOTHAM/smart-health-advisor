@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Patient History</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-dark text-light">
+
+<div class="container mt-5">
+
+<h2 class="text-center mb-4">Patient Prediction History</h2>
+
+<table class="table table-dark table-striped">
+
+<thead>
+<tr>
+<th>Symptoms</th>
+<th>Disease</th>
+<th>Probability</th>
+<th>Date</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for r in records %}
+
+<tr>
+<td>{{ r[1] }}</td>
+<td>{{ r[2] }}</td>
+<td>{{ r[3] }}%</td>
+<td>{{ r[4] }}</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</body>
+</html>

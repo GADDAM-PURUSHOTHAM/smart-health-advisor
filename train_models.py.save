@@ -1,0 +1,43 @@
+import pandas as pd
+import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+import sklearn
+
+print("Using sklearn version:", sklearn.__version__)
+
+# ===================== Load Dataset =====================
+data = pd.read_csv("Training.csv")
+
+# Features and target
+X = data.drop(columns=["prognosis"])
+y = data["prognosis"]
+
+# ===================== Train-Test Split =====================
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# ===================== Train SVC =====================
+svc = SVC(kernel="rbf", probability=True, random_state=42)
+svc.fit(X_train, y_train)
+
+svc_pred = svc.predict(X_test)
+print("SVC Accuracy:", accuracy_score(y_test, svc_pred))
+
+with open("svc.pkl", "wb") as f:
+    pickle.dump(svc, f)
+
+# ===================== Train Decision Tree =====================
+dt = DecisionTreeClassifier(random_state=42)
+dt.fit(X_train, y_train)
+
+dt_pred = dt.predict(X_test)
+print("Decision Tree Accuracy:", accuracy_score(y_test, dt_pred))
+
+with open("dt.pkl", "wb") as f:
+    pickle.dump(dt, f)
+
+print("✅ Models trained and saved successfully (svc.pkl, dt.pkl)")

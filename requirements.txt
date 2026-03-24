@@ -1,0 +1,11 @@
+flask
+pandas
+numpy
+scikit-learn
+sentence-transformers
+
+
+transformers
+torch
+accelerate
+sacremoses-0.1.1
