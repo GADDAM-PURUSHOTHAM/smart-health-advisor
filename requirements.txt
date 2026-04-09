@@ -3,6 +3,8 @@ pandas
 numpy
 scikit-learn
 sentence-transformers
+flask-login 
+flask-bcrypt
 
 
 transformers
