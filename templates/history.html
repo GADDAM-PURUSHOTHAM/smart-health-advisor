@@ -21,6 +21,7 @@
 <th>Symptoms</th>
 <th>Disease</th>
 <th>Probability</th>
+<th>Date</th>
 </tr>
 </thead>
 
@@ -29,9 +30,10 @@
 {% for r in data %}
 
 <tr>
+<td>{{ r[0] }}</td>
 <td>{{ r[1] }}</td>
-<td>{{ r[2] }}</td>
-<td>{{ r[3] }}%</td>
+<td>{{ r[2] }}%</td>
+<td>{{ r[3] }}</td>
 </tr>
 
 {% endfor %}
